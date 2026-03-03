@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - AlumniConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 CSS & JS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+</head>
+
+<body>
+
+    <nav class="glass-panel" style="margin: 20px 5%; border-radius: 20px;">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-graduation-cap"></i> Alumni<span>Connect</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="login.html" class="btn btn-secondary" style="border:none">Login</a></li>
+        </ul>
+    </nav>
+
+    <div class="auth-container">
+        <div class="glass-panel auth-form" style="max-width: 600px;">
+            <h2>Join the Network</h2>
+            <p class="subtitle">Register to connect with your college alumni</p>
+
+            <form id="registerForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Username (Unique)</label>
+                        <input type="text" id="name" class="form-control" placeholder="e.g. JohnDoe123" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="fullName" class="form-control" placeholder="e.g. John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="password" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select id="department" class="form-control" style="background-color: var(--glass-bg)" required>
+                            <option value="" disabled selected>Select Dept</option>
+                            <option value="MCA">MCA</option>
+                            <option value="MBA">MBA</option>
+                            <option value="BTECH">B.Tech</option>
+                            <option value="MTECH">M.Tech</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Batch Year</label>
+                        <input type="number" id="batchYear" class="form-control" min="1950" max="2030" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Current Company</label>
+                        <input type="text" id="currentCompany" class="form-control" placeholder="e.g. TCS">
+                    </div>
+                    <div class="form-group">
+                        <label>Job Role</label>
+                        <input type="text" id="jobRole" class="form-control" placeholder="e.g. Developer">
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="location" class="form-control" placeholder="e.g. Chennai">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-3" style="width: 100%;">Submit Registration</button>
+            </form>
+
+            <div class="auth-links">
+                Already have an account? <a href="login.html">Login here</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Show a loading state
+            Swal.fire({
+                title: 'Registering...',
+                text: 'Please wait while we set up your account',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const payload = {
+                name: document.getElementById('name').value,
+                fullName: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                department: document.getElementById('department').value,
+                batchYear: parseInt(document.getElementById('batchYear').value),
+                currentCompany: document.getElementById('currentCompany').value,
+                jobRole: document.getElementById('jobRole').value,
+                location: document.getElementById('location').value
+            };
+
+            try {
+                const res = await fetch('http://localhost:8080/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Registration failed');
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registration Successful!',
+                    text: 'Your account has been created. Please wait for an Admin to approve your account before logging in.',
+                    confirmButtonColor: '#3b82f6'
+                }).then(() => {
+                    document.getElementById('registerForm').reset();
+                    // Optionally redirect to login:
+                    // window.location.href = 'login.html';
+                });
+
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Registration Failed',
+                    text: error.message,
+                    confirmButtonColor: '#ef4444'
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

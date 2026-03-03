@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Feed - AlumniConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 CSS & JS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+    <style>
+        /* Hide scrollbars universally for a cleaner UI */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        * {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body style="min-height: 100vh; display: flex; flex-direction: column;">
+
+    <nav class="glass-panel" style="margin: 20px 5%; border-radius: 20px; z-index: 1000;">
+        <a href="dashboard.html" class="logo">
+            <i class="fa-solid fa-graduation-cap"></i> Alumni<span>Connect</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#" onclick="logout()" class="btn btn-secondary" style="border:none">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="dashboard-container" style="display: flex; min-height: calc(100vh - 100px);">
+        <!-- Sidebar -->
+        <aside class="glass-panel sidebar" style="height: 100%; border-radius: 20px; overflow-y: auto;">
+            <div class="user-profile-mini">
+                <div class="avatar" id="sidebarAvatar">A</div>
+                <h3 id="sidebarUserName" style="margin-bottom: 2px;">User Name</h3>
+                <p style="font-size: 0.85rem; color: var(--primary-color); font-weight: 600; margin-bottom: 5px;"
+                    id="sidebarUserHandle">@username</p>
+                <p style="font-size: 0.75rem; color: var(--text-muted);" id="sidebarUserRole">ALUMNI</p>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li><a href="#" id="navGlobal" class="active" onclick="setView('ALL')"><i
+                            class="fa-solid fa-newspaper"></i> News Feed</a></li>
+                <li><a href="#" id="navMyPosts" onclick="setView('MY_POSTS')"><i class="fa-solid fa-user-pen"></i> My
+                        Posts</a></li>
+                <li><a href="#" onclick="openCreatePostModal()"><i class="fa-solid fa-pen-to-square"></i> Create
+                        Post</a></li>
+                <li><a href="dashboard.html"><i class="fa-solid fa-users"></i> Alumni Network</a></li>
+                <li><a href="dashboard.html"><i class="fa-solid fa-handshake"></i> Connections</a></li>
+                <li><a href="events.html"><i class="fa-solid fa-calendar"></i> Events</a></li>
+                <li id="adminPanelLink" class="hidden"><a href="admin.html"
+                        style="color: var(--primary-color); font-weight: 600;"><i class="fa-solid fa-user-shield"></i>
+                        Admin Panel</a></li>
+                <li><a href="dashboard.html"><i class="fa-solid fa-user"></i> My Profile</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Feed Layout -->
+        <main class="main-content"
+            style="flex: 1; max-width: 500px; margin: 0 auto; padding: 0 10px; padding-bottom: 20px;">
+            <div class="page-header" style="display: block; text-align: center; margin-bottom: 1.5rem;">
+                <h2 id="feedTitle" style="font-size: 1.4rem; margin-bottom: 5px; justify-content: center;"><i
+                        class="fa-solid fa-newspaper"></i> Global Feed</h2>
+                <p id="feedSubtitle" style="color:var(--text-muted); font-size:0.9rem;">See what's happening in your
+                    alumni network</p>
+            </div>
+
+            <div id="feedContainer" style="display:flex; flex-direction:column; gap:25px; padding-bottom: 50px;">
+                <!-- Posts loop -->
+                <div style="text-align:center; padding: 40px;">
+                    <i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--text-muted)"></i>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Post Modal -->
+    <div id="createPostModal" class="modal-backdrop hidden">
+        <div class="glass-card modal-content"
+            style="max-width: 500px; width: 90%; background: var(--glass-bg); backdrop-filter: blur(10px);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0;">Create Post</h3>
+                <button class="close-modal" style="position:static" onclick="closeCreatePostModal()">×</button>
+            </div>
+
+            <div style="display:flex; gap:15px;">
+                <div class="avatar" style="width:40px;height:40px;font-size:1rem;margin:0;" id="modalAvatar">A</div>
+                <div style="flex-grow:1;">
+                    <textarea id="postContent" class="form-control"
+                        placeholder="Share something with the alumni network..." rows="3"
+                        style="resize:none; margin-bottom:10px;"></textarea>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <label for="postImageBtn" class="btn btn-secondary"
+                                style="padding:0.4rem 0.8rem; font-size:0.85rem; cursor:pointer;">
+                                <i class="fa-solid fa-image"></i> Attach Image
+                            </label>
+                            <input type="file" id="postImageBtn" accept="image/*" class="hidden"
+                                onchange="previewPostImage()">
+                            <span id="postImageName"
+                                style="font-size:0.8rem; margin-left:10px; color:var(--text-muted);"></span>
+                        </div>
+                        <button class="btn btn-primary" onclick="createPost()">Post</button>
+                    </div>
+                    <img id="postImagePreview" class="hidden"
+                        style="max-width:100%; max-height:200px; margin-top:10px; border-radius:10px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Post Modal -->
+    <div id="editPostModal" class="modal-backdrop hidden">
+        <div class="glass-card modal-content"
+            style="max-width: 500px; width: 90%; background: var(--glass-bg); backdrop-filter: blur(10px);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0;">Edit Post</h3>
+                <button class="close-modal" style="position:static" onclick="closeEditPostModal()">×</button>
+            </div>
+            <input type="hidden" id="editPostId">
+            <textarea id="editPostContent" class="form-control" rows="4"
+                style="resize:none; margin-bottom:10px;"></textarea>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <label for="editPostImageBtn" class="btn btn-secondary"
+                        style="padding:0.4rem 0.8rem; font-size:0.85rem; cursor:pointer;">
+                        <i class="fa-solid fa-image"></i> Change Image
+                    </label>
+                    <input type="file" id="editPostImageBtn" accept="image/*" class="hidden"
+                        onchange="previewEditPostImage()">
+                </div>
+                <button class="btn btn-primary" onclick="submitEditPost()">Save Changes</button>
+            </div>
+            <img id="editPostImagePreview" class="hidden"
+                style="max-width:100%; max-height:200px; margin-top:10px; border-radius:10px;" />
+        </div>
+    </div>
+
+    <!-- Share Post Modal -->
+    <div id="sharePostModal" class="modal"
+        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;">
+        <div class="modal-content glass-card"
+            style="background-color: var(--glass-bg); margin: auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; transform: scale(0.9); transition: transform 0.3s ease;">
+            <span class="close" onclick="closeShareModal()"
+                style="color: var(--text-color); float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+            <h2 style="margin-top:0; color:var(--text-color); font-size:1.5rem; margin-bottom: 5px;">Share with Alumni
+            </h2>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom: 20px;">Select an alumni to send this
+                post to.</p>
+
+            <input type="hidden" id="sharePostId">
+            <div id="shareAlumniList"
+                style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                <!-- Alumni list will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if (!userData || !userData.id) {
+            window.location.href = 'login.html';
+        }
+
+        // Setup Sidebar info
+        const initial = userData.fullName ? userData.fullName.charAt(0).toUpperCase() : (userData.name ? userData.name.charAt(0).toUpperCase() : '?');
+
+        const avatarEl = document.getElementById('sidebarAvatar');
+        avatarEl.textContent = userData.profilePicture ? '' : initial;
+        if (userData.profilePicture) {
+            avatarEl.style.backgroundImage = `url(${userData.profilePicture})`;
+            avatarEl.style.backgroundSize = 'cover';
+            avatarEl.style.backgroundPosition = 'center';
+        }
+
+        document.getElementById('sidebarUserName').textContent = userData.fullName || userData.name || 'User Name';
+        document.getElementById('sidebarUserHandle').textContent = userData.name ? `@${userData.name}` : '';
+        document.getElementById('sidebarUserRole').textContent = userData.userType || 'ALUMNI';
+        document.getElementById('modalAvatar').textContent = initial;
+
+        if (userData.userType === 'ADMIN') {
+            document.getElementById('adminPanelLink').classList.remove('hidden');
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        function openCreatePostModal() {
+            document.getElementById('createPostModal').classList.remove('hidden');
+        }
+
+        function closeCreatePostModal() {
+            document.getElementById('createPostModal').classList.add('hidden');
+        }
+
+        // ================= FEED LOGIC =================
+        let currentPostImageBase64 = null;
+
+        function previewPostImage() {
+            const file = document.getElementById('postImageBtn').files[0];
+            if (!file) return;
+
+            document.getElementById('postImageName').textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                currentPostImageBase64 = e.target.result;
+                const preview = document.getElementById('postImagePreview');
+                preview.src = currentPostImageBase64;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function createPost() {
+            const content = document.getElementById('postContent').value.trim();
+
+            if (!content && !currentPostImageBase64) {
+                alert("Please add some text or an image to post.");
+                return;
+            }
+
+            try {
+                const res = await fetch('http://localhost:8080/api/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        authorId: userData.id,
+                        authorName: userData.fullName || userData.name || 'Alumni',
+                        authorRole: "ALUMNI",
+                        content: content,
+                        imageBase64: currentPostImageBase64
+                    })
+                });
+
+                if (res.ok) {
+                    // reset form
+                    document.getElementById('postContent').value = '';
+                    document.getElementById('postImageBtn').value = '';
+                    document.getElementById('postImageName').textContent = '';
+                    document.getElementById('postImagePreview').classList.add('hidden');
+                    currentPostImageBase64 = null;
+                    closeCreatePostModal();
+
+                    loadFeed(); // reload feed
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        let currentFilter = 'ALL';
+
+        function setView(view) {
+            currentFilter = view;
+            document.getElementById('navGlobal').className = view === 'ALL' ? 'active' : '';
+            document.getElementById('navMyPosts').className = view === 'MY_POSTS' ? 'active' : '';
+
+            if (view === 'MY_POSTS') {
+                document.getElementById('feedTitle').innerHTML = '<i class="fa-solid fa-user-pen"></i> My Posts';
+                document.getElementById('feedSubtitle').textContent = 'Manage your past posts';
+            } else {
+                document.getElementById('feedTitle').innerHTML = '<i class="fa-solid fa-newspaper"></i> Global Feed';
+                document.getElementById('feedSubtitle').textContent = "See what's happening in your alumni network";
+            }
+            loadFeed();
+        }
+
+        async function loadFeed() {
+            try {
+                const res = await fetch('http://localhost:8080/api/posts');
+                let posts = await res.json();
+
+                // Make all fetched posts globally accessible for editing
+                window.currentPosts = posts;
+
+                if (currentFilter === 'MY_POSTS') {
+                    posts = posts.filter(p => p.authorId === userData.id);
+                }
+
+                const container = document.getElementById('feedContainer');
+                if (posts.length === 0) {
+                    container.innerHTML = '<div class="glass-card" style="text-align:center; padding: 40px;"><p style="color:var(--text-muted);"><i class="fa-solid fa-ghost fa-2x mb-2"></i><br>No posts yet.</p></div>';
+                    return;
+                }
+
+                container.innerHTML = posts.map(p => {
+                    const d = new Date(p.timestamp);
+                    const timeString = isNaN(d) ? 'Just now' : d.toLocaleString();
+                    const badge = p.authorRole === 'ADMIN' ? '<span class="badge badge-primary" style="background:#e74c3c; padding:2px 6px; font-size:0.7rem; margin-left:10px;">Admin</span>' : '';
+
+                    const isMyPost = (p.authorId === userData.id) || (p.authorRole === 'ADMIN' && userData.userType === 'ADMIN');
+                    const showActions = isMyPost && currentFilter === 'MY_POSTS';
+                    const actionButtons = showActions ? `
+                        <div style="position:absolute; top:12px; right:12px; display:flex; gap:5px;">
+                            <button class="btn btn-secondary" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="openEditPostModal('${p.id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                            <button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="deletePost('${p.id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                        </div>
+                    ` : '';
+
+                    return `
+                    <div class="glass-card" style="padding: 16px; position:relative;">
+                        ${actionButtons}
+                        <div style="display:flex; align-items:center; gap: 10px; margin-bottom: 10px;">
+                            <div class="avatar" style="width: 38px; height: 38px; font-size: 1rem; margin:0; ${p.authorRole === 'ADMIN' ? 'background: linear-gradient(135deg, #ef4444, #f97316);' : ''}">
+                                ${p.authorRole === 'ADMIN' ? '<i class="fa-solid fa-user-shield"></i>' : (p.authorName ? p.authorName.charAt(0).toUpperCase() : '?')}
+                            </div>
+                            <div>
+                                <h3 style="margin:0; font-size:1rem; font-weight: 600;">${p.authorName} ${badge}</h3>
+                                <p style="margin:0; font-size:0.75rem; color:var(--text-muted)">${timeString}</p>
+                            </div>
+                        </div>
+                        
+                        ${p.content ? `<p style="margin-bottom: ${p.imageBase64 ? '8px' : '0'}; line-height:1.4; font-size: 0.85rem;">${p.content}</p>` : ''}
+                        
+                        ${p.imageBase64 ? `<img src="${p.imageBase64}" class="post-image" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; margin-top: 5px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" />` : ''}
+                        <!-- Interaction Stats Bar -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 10px; font-size:0.8rem; color:var(--text-muted);">
+                            <div style="display:flex; align-items:center; gap:5px;">
+                                <i class="fa-solid fa-heart" style="color:#ef4444; font-size:0.75rem;"></i>
+                                <span class="like-count" style="font-weight: 600;">${p.likedBy ? p.likedBy.length : 0}</span>
+                                <span class="like-preview-text" style="margin-left:5px; font-size:0.75rem;">
+                                    ${p.likedBy && p.likedBy.includes(userData.id)
+                            ? (p.likedBy.length > 1 ? `(You and ${p.likedBy.length - 1} others)` : '(You)')
+                            : (p.likedBy && p.likedBy.length > 0 ? `(Liked by Alumni)` : '')}
+                                </span>
+                            </div>
+                            <div style="display:flex; gap:15px;">
+                                <span><span class="comment-count">${p.comments ? p.comments.length : 0}</span> Comments</span>
+                                <span><span class="share-count">${p.shareCount ? p.shareCount : 0}</span> Shares</span>
+                            </div>
+                        </div>
+
+                        <!-- Interactions Bar -->
+                        <div style="display:flex; justify-content:space-around; align-items:center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--glass-border);">
+                            <button class="btn btn-secondary action-btn" onclick="toggleLike('${p.id}', this)" style="border:none; color:${(p.likedBy && p.likedBy.includes(userData.id)) ? '#ef4444' : 'var(--text-muted)'}; padding: 4px 8px; font-size: 0.8rem; display:flex; align-items:center; gap:5px; font-weight:500;">
+                                <i class="${(p.likedBy && p.likedBy.includes(userData.id)) ? 'fa-solid' : 'fa-regular'} fa-heart" style="${(p.likedBy && p.likedBy.includes(userData.id)) ? 'color:#ef4444' : ''}"></i> <span class="action-text">${(p.likedBy && p.likedBy.includes(userData.id)) ? 'Liked' : 'Like'}</span>
+                            </button>
+                            <button class="btn btn-secondary action-btn" onclick="toggleComments('${p.id}')" style="border:none; color:var(--text-muted); padding: 4px 8px; font-size: 0.8rem; display:flex; align-items:center; gap:5px; font-weight:500;">
+                                <i class="fa-regular fa-comment"></i> <span class="action-text">Comment</span>
+                            </button>
+                            <button class="btn btn-secondary action-btn" onclick="openShareModal('${p.id}')" style="border:none; color:var(--text-muted); padding: 4px 8px; font-size: 0.8rem; display:flex; align-items:center; gap:5px; font-weight:500;">
+                                <i class="fa-solid fa-share-nodes"></i> <span class="action-text">Share</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Comments Section (Hidden by default) -->
+                        <div id="comments-${p.id}" class="comments-section" style="display: none; margin-top: 15px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
+                            <!-- Existing Comments -->
+                            <div class="comments-list" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; padding-right: 5px;">
+                                ${p.comments && p.comments.length > 0 ? p.comments.map(c => `
+                                    <div style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px;">
+                                        <div style="display:flex; justify-content: space-between; margin-bottom: 4px;">
+                                            <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-color);">${c.authorName}</span>
+                                            <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(c.timestamp).toLocaleString()}</span>
+                                        </div>
+                                        <p style="margin:0; font-size: 0.85rem; color: var(--text-color);">${c.content}</p>
+                                    </div>
+                                `).join('') : '<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin: 10px 0;">No comments yet. Be the first!</p>'}
+                            </div>
+                            
+                            <!-- Add Comment Input -->
+                            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                <textarea id="comment-input-${p.id}" class="form-control" placeholder="Write a comment..." rows="1" style="flex: 1; min-height: 38px; resize: none; overflow: hidden; padding: 8px 12px; font-size: 0.85rem;" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+                                <button class="btn btn-primary" onclick="submitComment('${p.id}')" style="padding: 8px 15px; font-size: 0.85rem;"><i class="fa-solid fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('feedContainer').innerHTML = '<p class="alert-error" style="padding: 15px; border-radius: 8px;">Failed to connect to the server.</p>';
+            }
+        }
+
+        async function deletePost(postId) {
+            if (!confirm("Are you sure you want to delete this post?")) return;
+            try {
+                const res = await fetch(`http://localhost:8080/api/posts/${postId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadFeed();
+                } else {
+                    alert("Failed to delete post.");
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        let editPostImageBase64 = null;
+
+        function openEditPostModal(postId) {
+            const post = window.currentPosts.find(p => p.id === postId);
+            if (!post) return;
+
+            document.getElementById('editPostId').value = postId;
+            document.getElementById('editPostContent').value = post.content || '';
+            editPostImageBase64 = null;
+            document.getElementById('editPostImageBtn').value = '';
+
+            const preview = document.getElementById('editPostImagePreview');
+            if (post.imageBase64) {
+                preview.src = post.imageBase64;
+                preview.classList.remove('hidden');
+                editPostImageBase64 = post.imageBase64;
+            } else {
+                preview.classList.add('hidden');
+            }
+
+            document.getElementById('editPostModal').classList.remove('hidden');
+        }
+
+        function closeEditPostModal() {
+            document.getElementById('editPostModal').classList.add('hidden');
+        }
+
+        function previewEditPostImage() {
+            const file = document.getElementById('editPostImageBtn').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                editPostImageBase64 = e.target.result;
+                const preview = document.getElementById('editPostImagePreview');
+                preview.src = editPostImageBase64;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function submitEditPost() {
+            const postId = document.getElementById('editPostId').value;
+            const content = document.getElementById('editPostContent').value.trim();
+
+            if (!content && !editPostImageBase64) {
+                alert("Post cannot be completely empty.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`http://localhost:8080/api/posts/${postId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: content,
+                        imageBase64: editPostImageBase64
+                    })
+                });
+
+                if (res.ok) {
+                    closeEditPostModal();
+                    loadFeed();
+                } else {
+                    alert("Failed to update post");
+                }
+            } catch (e) { console.error(e); }
+        }
+        // Toggles
+        async function toggleLike(postId, btn) {
+            try {
+                const res = await fetch(`http://localhost:8080/api/posts/${postId}/like?userId=${userData.id}`, { method: 'POST' });
+                if (res.ok) {
+                    const updatedPost = await res.json();
+
+                    const card = btn.closest('.glass-card');
+                    const countSpan = card.querySelector('.like-count');
+                    const icon = btn.querySelector('i');
+                    const text = btn.querySelector('.action-text');
+
+                    countSpan.textContent = updatedPost.likedBy ? updatedPost.likedBy.length : 0;
+
+                    if (updatedPost.likedBy && updatedPost.likedBy.includes(userData.id)) {
+                        icon.classList.replace('fa-regular', 'fa-solid');
+                        icon.style.color = '#ef4444'; // red
+                        btn.style.color = '#ef4444';
+                        text.textContent = 'Liked';
+                    } else {
+                        icon.classList.replace('fa-solid', 'fa-regular');
+                        icon.style.color = '';
+                        btn.style.color = 'var(--text-muted)';
+                        text.textContent = 'Like';
+                    }
+                }
+            } catch (e) { console.error('Failed to toggle like', e); }
+        }
+
+        function openShareModal(postId) {
+            document.getElementById('sharePostId').value = postId;
+            const modal = document.getElementById('sharePostModal');
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.style.opacity = '1';
+                modal.style.pointerEvents = 'auto';
+                modal.querySelector('.modal-content').style.transform = 'scale(1)';
+            }, 10);
+
+            // Fetch alumni
+            fetchAlumniForShare();
+        }
+
+        function closeShareModal() {
+            const modal = document.getElementById('sharePostModal');
+            modal.style.opacity = '0';
+            modal.style.pointerEvents = 'none';
+            modal.querySelector('.modal-content').style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        async function fetchAlumniForShare() {
+            const listContainer = document.getElementById('shareAlumniList');
+            listContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Loading alumni...</p>';
+
+            try {
+                const res = await fetch('http://localhost:8080/api/alumni');
+                if (res.ok) {
+                    const alumni = await res.json();
+                    const filteredAlumni = alumni.filter(a => a.id !== userData.id);
+
+                    if (filteredAlumni.length === 0) {
+                        listContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted);">No other alumni found.</p>';
+                        return;
+                    }
+
+                    listContainer.innerHTML = filteredAlumni.map(a => `
+                        <div class="glass-card" style="padding: 10px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px;">
+                            <div style="display:flex; align-items:center; gap: 10px;">
+                                <div class="avatar" style="width: 32px; height: 32px; font-size: 0.85rem; margin:0;">
+                                    ${a.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h4 style="margin:0; font-size: 0.9rem;">${a.name}</h4>
+                                    <p style="margin:0; font-size: 0.7rem; color: var(--text-muted);">${a.department || 'Alumni'}</p>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="sharePostWithUser('${a.id}', '${a.name}')">Send</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                listContainer.innerHTML = '<p style="color:var(--text-error); text-align:center;">Failed to load alumni.</p>';
+            }
+        }
+
+        async function sharePostWithUser(receiverId, receiverName) {
+            const postId = document.getElementById('sharePostId').value;
+            const messageContent = `I shared a post with you! Check out the Global Feed (Post ID: ${postId}).`;
+
+            try {
+                // Increment share count
+                await fetch(`http://localhost:8080/api/posts/${postId}/share`, { method: 'POST' });
+
+                // Send message to the user
+                const messageData = {
+                    senderId: userData.id,
+                    receiverId: receiverId,
+                    content: messageContent
+                };
+
+                await fetch('http://localhost:8080/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(messageData)
+                });
+
+                alert(`Successfully shared with ${receiverName}!`);
+                closeShareModal();
+                loadFeed(); // Reload feed to update share counts
+            } catch (e) {
+                console.error('Failed to share', e);
+                alert("Failed to share post.");
+            }
+        }
+
+        function toggleComments(postId) {
+            const commentsSection = document.getElementById(`comments-${postId}`);
+            if (commentsSection.style.display === 'none') {
+                commentsSection.style.display = 'block';
+                // Focus the input when opening
+                setTimeout(() => document.getElementById(`comment-input-${postId}`).focus(), 100);
+            } else {
+                commentsSection.style.display = 'none';
+            }
+        }
+
+        async function submitComment(postId) {
+            const inputEl = document.getElementById(`comment-input-${postId}`);
+            const content = inputEl.value.trim();
+
+            if (!content) return;
+
+            // Disable input while submitting
+            inputEl.disabled = true;
+
+            try {
+                const commentData = {
+                    authorId: userData.id,
+                    authorName: userData.name,
+                    content: content
+                };
+
+                const res = await fetch(`http://localhost:8080/api/posts/${postId}/comment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(commentData)
+                });
+
+                if (res.ok) {
+                    // Quickest way to update UI is to simply reload the feed
+                    // In a production app you'd ideally just append the single DOM element
+                    loadFeed();
+                } else {
+                    alert('Failed to post comment.');
+                    inputEl.disabled = false;
+                }
+            } catch (e) {
+                console.error('Failed to post comment:', e);
+                inputEl.disabled = false;
+            }
+        }
+
+        loadFeed();
+    </script>
+</body>
+
+</html>

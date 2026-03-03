@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AlumniConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 CSS & JS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+</head>
+
+<body>
+
+    <nav class="glass-panel" style="margin: 20px 5%; border-radius: 20px;">
+        <a href="#" class="logo">
+            <i class="fa-solid fa-graduation-cap"></i> Admin<span>Panel</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#" onclick="logout()" class="btn btn-secondary" style="border:none"><i
+                        class="fa-solid fa-power-off"></i> Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="glass-panel sidebar">
+            <div class="user-profile-mini">
+                <div class="avatar" style="background: linear-gradient(135deg, #ef4444, #f97316);"><i
+                        class="fa-solid fa-user-shield"></i></div>
+                <h3 id="adminName">Admin</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">System Administrator</p>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li><a href="admin_feed.html"><i class="fa-solid fa-newspaper"></i> Manage Feed</a></li>
+                <li><a href="#approvals" class="active" onclick="switchTab('approvals', this)"><i
+                            class="fa-solid fa-user-check"></i> Pending Approvals</a></li>
+                <li><a href="#events" onclick="switchTab('events', this)"><i class="fa-solid fa-calendar-plus"></i>
+                        Manage Events</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div id="alertBox" class="alert"></div>
+
+            <!-- News Feed Tab -->
+            <div id="feedTab" class="hidden">
+                <div class="page-header">
+                    <h2><i class="fa-solid fa-newspaper"></i> Manage Feed</h2>
+                </div>
+
+                <!-- Admin Create Post Box -->
+                <div class="glass-card mb-4">
+                    <div style="display:flex; gap:15px;">
+                        <div class="avatar"
+                            style="width:40px;height:40px;font-size:1rem;margin:0;background: linear-gradient(135deg, #ef4444, #f97316);">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <div style="flex-grow:1;">
+                            <textarea id="postContent" class="form-control"
+                                placeholder="Post an official announcement..." rows="3"
+                                style="resize:none; margin-bottom:10px;"></textarea>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <label for="postImageBtn" class="btn btn-secondary"
+                                        style="padding:0.4rem 0.8rem; font-size:0.85rem; cursor:pointer;">
+                                        <i class="fa-solid fa-image"></i> Attach Image
+                                    </label>
+                                    <input type="file" id="postImageBtn" accept="image/*" class="hidden"
+                                        onchange="previewPostImage()">
+                                    <span id="postImageName"
+                                        style="font-size:0.8rem; margin-left:10px; color:var(--text-muted);"></span>
+                                </div>
+                                <button class="btn btn-primary" onclick="createPost()">Post Announcement</button>
+                            </div>
+                            <img id="postImagePreview" class="hidden"
+                                style="max-width:100%; max-height:200px; margin-top:10px; border-radius:10px;" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Container -->
+                <div id="feedContainer" style="display:flex; flex-direction:column; gap:20px;">
+                    <!-- Posts go here -->
+                </div>
+            </div>
+
+            <div id="approvalsTab">
+                <div class="page-header">
+                    <h2><i class="fa-solid fa-user-clock"></i> Pending Approvals</h2>
+                    <button class="btn btn-secondary" onclick="loadPending()"><i class="fa-solid fa-rotate-right"></i>
+                        Refresh</button>
+                </div>
+
+                <div class="alumni-grid" id="pendingContainer">
+                    <!-- Pending alumni loaded here -->
+                </div>
+            </div>
+
+            <div id="eventsTab" class="hidden">
+                <div style="display: grid; grid-template-columns: 400px 1fr; gap: 30px; align-items: start;">
+                    <!-- Left: Create Event -->
+                    <div>
+                        <div class="page-header">
+                            <h2><i class="fa-solid fa-calendar-plus"></i> Create Event</h2>
+                        </div>
+                        <div class="glass-card">
+                            <form id="eventForm">
+                                <div class="form-group">
+                                    <label>Event Title</label>
+                                    <input type="text" id="eventTitle" class="form-control" required
+                                        placeholder="e.g. Annual Alumni Meet">
+                                </div>
+                                <div class="form-group">
+                                    <label>Event Date</label>
+                                    <input type="date" id="eventDate" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <textarea id="eventDesc" class="form-control" rows="4" required
+                                        placeholder="Describe the event details..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">
+                                    <i class="fa-solid fa-plus-circle"></i> Create Event
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right: All Events -->
+                    <div>
+                        <div class="page-header">
+                            <h2><i class="fa-solid fa-list-check"></i> All Events</h2>
+                        </div>
+                        <div id="eventsList" style="display: flex; flex-direction: column; gap: 20px;">
+                            <!-- events listed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Attendees Modal -->
+    <div id="attendeesModal" class="modal-backdrop hidden">
+        <div class="glass-card modal-content"
+            style="max-width: 600px; width: 90%; background: var(--glass-bg); backdrop-filter: blur(10px);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0;"><i class="fa-solid fa-users"></i> Registered Attendees</h3>
+                <button class="close-modal" style="position:static" onclick="closeAttendeesModal()">×</button>
+            </div>
+
+            <div id="attendeesListContainer" style="max-height: 400px; overflow-y: auto;">
+                <!-- Attendees go here -->
+                <div style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (localStorage.getItem('userType') !== 'ADMIN') {
+            window.location.href = 'login.html';
+        }
+
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if (userData && userData.username) {
+            document.getElementById('adminName').textContent = userData.username.toUpperCase();
+        } else if (userData && userData.name) {
+            document.getElementById('adminName').textContent = userData.name.toUpperCase();
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+            el.classList.add('active');
+
+            const tabs = ['approvalsTab', 'eventsTab', 'feedTab'];
+            tabs.forEach(t => document.getElementById(t).classList.add('hidden'));
+
+            if (tabId === 'approvals') {
+                document.getElementById('approvalsTab').classList.remove('hidden');
+                loadPending();
+            } else if (tabId === 'feed') {
+                document.getElementById('feedTab').classList.remove('hidden');
+                loadFeed();
+            } else {
+                document.getElementById('eventsTab').classList.remove('hidden');
+                loadEvents();
+            }
+        }
+
+        function showAlert(msg, isError = false) {
+            const box = document.getElementById('alertBox');
+            box.textContent = msg;
+            box.className = `alert show ${isError ? 'alert-error' : 'alert-success'}`;
+            setTimeout(() => box.classList.remove('show'), 3000);
+        }
+
+        async function loadPending() {
+            try {
+                const res = await fetch('http://localhost:8080/api/admin/pending');
+                const data = await res.json();
+
+                const container = document.getElementById('pendingContainer');
+                if (data.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-muted)">No pending approvals.</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(u => `
+                    <div class="glass-card">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <div>
+                                <h3 style="margin:0">${u.fullName || 'No Name'}</h3>
+                                <p style="margin:0; font-size:0.85rem; color:var(--primary-color);">@${u.name}</p>
+                            </div>
+                        </div>
+                        <p style="margin:5px 0 0; font-size:0.85rem; color:var(--text-muted)">${u.email}</p>
+                        <p style="font-size:0.9rem; margin-top:5px;"><i class="fa-solid fa-graduation-cap"></i> ${u.department} - ${u.batchYear}</p>
+                        <div style="display:flex; gap: 10px; margin-top: 15px;">
+                            <button class="btn btn-success" style="flex:1" onclick="approveUser('${u.id}')">Approve</button>
+                            <button class="btn btn-danger" style="flex:1" onclick="rejectUser('${u.id}')">Reject</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function approveUser(id) {
+            try {
+                const res = await fetch(`http://localhost:8080/api/admin/approve/${id}`, { method: 'PUT' });
+                if (res.ok) {
+                    showAlert('User approved successfully');
+                    loadPending();
+                } else {
+                    showAlert('Failed to approve user', true);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function rejectUser(id) {
+            if (!confirm("Are you sure you want to reject and delete this application?")) return;
+            try {
+                const res = await fetch(`http://localhost:8080/api/admin/alumni/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showAlert('User application rejected and deleted');
+                    loadPending();
+                } else {
+                    showAlert('Failed to reject user', true);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        document.getElementById('eventForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                title: document.getElementById('eventTitle').value,
+                date: document.getElementById('eventDate').value,
+                description: document.getElementById('eventDesc').value
+            };
+
+            try {
+                const res = await fetch('http://localhost:8080/api/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    showAlert('Event created successfully!');
+                    document.getElementById('eventForm').reset();
+                    loadEvents();
+                } else {
+                    showAlert('Failed to create event', true);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        async function loadEvents() {
+            try {
+                const res = await fetch('http://localhost:8080/api/events/with-counts');
+                const data = await res.json();
+
+                const container = document.getElementById('eventsList');
+                if (data.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-muted)">No events found.</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(item => {
+                    const ev = item.event;
+                    const count = item.registrationCount;
+                    return `
+                    <div class="glass-card">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <h3 style="margin:0">${ev.title}</h3>
+                            <button class="btn btn-danger" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" onclick="deleteEvent('${ev.id}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <p style="font-size:0.85rem; color:var(--primary-color); margin: 5px 0 10px;"><i class="fa-solid fa-calendar-day"></i> ${ev.date}</p>
+                        <p style="font-size:0.9rem; color:var(--text-muted)">${ev.description}</p>
+                        <div style="margin-top: 15px; display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--glass-border); padding-top: 10px;">
+                            <span class="badge badge-primary"><i class="fa-solid fa-user-check"></i> ${count} Registered</span>
+                            <button class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="viewAttendees('${ev.id}')">View Details</button>
+                        </div>
+                    </div>
+                `}).join('');
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function viewAttendees(eventId) {
+            const modal = document.getElementById('attendeesModal');
+            const container = document.getElementById('attendeesListContainer');
+
+            modal.classList.remove('hidden');
+            container.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+
+            try {
+                const res = await fetch(`http://localhost:8080/api/events/${eventId}/attendees`);
+                const data = await res.json();
+
+                if (data.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding: 20px; color:var(--text-muted);">No one has registered yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
+                        <thead style="border-bottom: 1px solid var(--glass-border);">
+                            <tr>
+                                <th style="text-align:left; padding: 10px; font-size: 0.85rem; color: var(--text-muted);">Name</th>
+                                <th style="text-align:left; padding: 10px; font-size: 0.85rem; color: var(--text-muted);">Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(reg => `
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px 10px; font-size: 0.9rem;">${reg.fullName}</td>
+                                    <td style="padding: 12px 10px; font-size: 0.9rem; color: var(--text-muted);">${reg.email}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = '<p style="text-align:center; padding: 20px; color:red;">Failed to load attendees.</p>';
+            }
+        }
+
+        function closeAttendeesModal() {
+            document.getElementById('attendeesModal').classList.add('hidden');
+        }
+
+        async function deleteEvent(id) {
+            if (!confirm("Delete this event?")) return;
+            try {
+                const res = await fetch(`http://localhost:8080/api/events/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showAlert('Event deleted');
+                    loadEvents();
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // ================= FEED LOGIC =================
+        let currentPostImageBase64 = null;
+
+        function previewPostImage() {
+            const file = document.getElementById('postImageBtn').files[0];
+            if (!file) return;
+
+            document.getElementById('postImageName').textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                currentPostImageBase64 = e.target.result;
+                const preview = document.getElementById('postImagePreview');
+                preview.src = currentPostImageBase64;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function createPost() {
+            const content = document.getElementById('postContent').value.trim();
+            if (!content && !currentPostImageBase64) {
+                showAlert("Please add some text or an image to post.", true);
+                return;
+            }
+
+            try {
+                const res = await fetch('http://localhost:8080/api/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        authorId: userData.id || 'admin',
+                        authorName: userData.username || 'System Admin',
+                        authorRole: "ADMIN",
+                        content: content,
+                        imageBase64: currentPostImageBase64
+                    })
+                });
+
+                if (res.ok) {
+                    document.getElementById('postContent').value = '';
+                    document.getElementById('postImageBtn').value = '';
+                    document.getElementById('postImageName').textContent = '';
+                    document.getElementById('postImagePreview').classList.add('hidden');
+                    currentPostImageBase64 = null;
+                    showAlert('Post created successfully!');
+                    loadFeed();
+                }
+            } catch (e) { console.error(e); showAlert('Failed to create post', true); }
+        }
+
+        async function loadFeed() {
+            try {
+                const res = await fetch('http://localhost:8080/api/posts');
+                const posts = await res.json();
+
+                const container = document.getElementById('feedContainer');
+                if (posts.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-muted); text-align:center;">No posts yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = posts.map(p => {
+                    const d = new Date(p.timestamp);
+                    const timeString = isNaN(d) ? 'Just now' : d.toLocaleString();
+                    const badge = p.authorRole === 'ADMIN' ? '<span class="badge badge-primary" style="background:#e74c3c; padding:2px 6px; font-size:0.7rem; margin-left:10px;">Admin</span>' : '';
+
+                    return `
+                    <div class="glass-card" style="padding: 20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="display:flex; align-items:center; gap: 15px; margin-bottom: 15px;">
+                                <div class="avatar" style="width: 45px; height: 45px; font-size: 1.1rem; margin:0; ${p.authorRole === 'ADMIN' ? 'background: linear-gradient(135deg, #ef4444, #f97316);' : ''}">
+                                    ${p.authorRole === 'ADMIN' ? '<i class="fa-solid fa-user-shield"></i>' : (p.authorName ? p.authorName.charAt(0).toUpperCase() : '?')}
+                                </div>
+                                <div>
+                                    <h3 style="margin:0; font-size:1.1rem;">${p.authorName} ${badge}</h3>
+                                    <p style="margin:0; font-size:0.8rem; color:var(--text-muted)">${timeString}</p>
+                                </div>
+                            </div>
+                            <button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteFeedPost('${p.id}')">
+                                <i class="fa-solid fa-trash"></i> Delete
+                            </button>
+                        </div>
+                        
+                        ${p.content ? `<p style="margin-bottom: ${p.imageBase64 ? '15px' : '0'}; line-height:1.5;">${p.content}</p>` : ''}
+                        
+                        ${p.imageBase64 ? `<img src="${p.imageBase64}" class="post-image" />` : ''}
+                    </div>
+                `}).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteFeedPost(postId) {
+            if (!confirm("Are you sure you want to delete this post from the entire system?")) return;
+            try {
+                const res = await fetch(`http://localhost:8080/api/posts/${postId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showAlert('Post deleted');
+                    loadFeed();
+                } else {
+                    showAlert('Failed to delete post', true);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Init
+        loadFeed();
+        switchTab('feed', document.querySelector('a[href="#feed"]')); 
+    </script>
+</body>
+
+</html>

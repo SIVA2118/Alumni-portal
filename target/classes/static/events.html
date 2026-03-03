@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events - AlumniConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <nav class="glass-panel" style="margin: 20px 5%; border-radius: 20px;">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-graduation-cap"></i> Alumni<span>Connect</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="dashboard.html" class="active">Dashboard</a></li>
+        </ul>
+    </nav>
+
+    <div style="padding: 2rem 5%; flex-grow: 1;">
+        <div class="page-header"
+            style="justify-content: center; text-align: center; flex-direction: column; margin-bottom: 3rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 10px;">Upcoming Events</h1>
+            <p style="color: var(--text-muted); max-width: 600px;">Join our upcoming alumni meets, webinars, and
+                networking sessions.</p>
+        </div>
+
+        <div class="event-grid" id="publicEventsList" style="max-width: 1200px; margin: 0 auto;">
+            <div style="text-align:center; padding: 2rem; width:100%;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div id="registrationModal" class="modal-backdrop hidden">
+        <div class="glass-card modal-content"
+            style="max-width: 500px; width: 90%; background: var(--glass-bg); backdrop-filter: blur(10px);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0;"><i class="fa-solid fa-file-signature"></i> Event Registration</h3>
+                <button class="close-modal" style="position:static" onclick="closeRegistrationModal()">×</button>
+            </div>
+
+            <form id="registrationForm" onsubmit="submitRegistration(event)">
+                <input type="hidden" id="regEventId">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="regFullName" class="form-control" required
+                        placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="regEmail" class="form-control" required placeholder="Enter your email">
+                </div>
+                <div style="margin-top: 25px;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fa-solid fa-check-circle"></i> Confirm Registration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+
+    <script>
+        const userData = JSON.parse(localStorage.getItem('userData')) || null;
+
+        async function loadPublicEvents() {
+            try {
+                const res = await fetch('http://localhost:8080/api/events/with-counts');
+                const data = await res.json();
+
+                const container = document.getElementById('publicEventsList');
+                if (data.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-muted); text-align:center; width: 100%;">Checking for upcoming events... none announced yet.</p>';
+                    return;
+                }
+
+                // Sort by date approaching
+                data.sort((a, b) => new Date(a.event.date) - new Date(b.event.date));
+
+                container.innerHTML = data.map(item => {
+                    const ev = item.event;
+                    const count = item.registrationCount;
+                    const eventDate = new Date(ev.date);
+                    const month = eventDate.toLocaleString('default', { month: 'short' });
+                    const day = eventDate.getDate();
+
+                    return `
+                    <div class="glass-card" style="display:flex; gap: 20px;">
+                        <div class="glass-panel" style="width: 80px; height: 80px; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 1px solid var(--primary-color);">
+                            <span style="font-weight:bold; font-size:1.5rem; color:var(--primary-color); line-height:1;">${day < 10 ? '0' + day : day}</span>
+                            <span style="font-size:0.85rem; text-transform:uppercase;">${month}</span>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; align-items:start;">
+                                <h3 style="margin: 0 0 5px 0;">${ev.title}</h3>
+                                <span style="font-size:0.8rem; color:var(--text-muted);"><i class="fa-solid fa-users"></i> ${count} registered</span>
+                            </div>
+                            <p style="margin:0; font-size:0.9rem; color:var(--text-muted)">${ev.description}</p>
+                            <div class="mt-2">
+                                <button onclick="openRegistrationModal('${ev.id}')" class="btn btn-primary" style="padding: 0.3rem 0.8rem; font-size: 0.85rem;">Register for Event</button>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+            } catch (error) {
+                console.error(error);
+                document.getElementById('publicEventsList').innerHTML = '<p style="color:red; text-align:center; width: 100%;">Failed to load events. Is API running?</p>';
+            }
+        }
+
+        function openRegistrationModal(eventId) {
+            document.getElementById('regEventId').value = eventId;
+
+            // Auto-fill if user data exists
+            if (userData) {
+                document.getElementById('regFullName').value = userData.fullName || userData.name || '';
+                document.getElementById('regEmail').value = userData.email || '';
+            }
+
+            document.getElementById('registrationModal').classList.remove('hidden');
+        }
+
+        function closeRegistrationModal() {
+            document.getElementById('registrationModal').classList.add('hidden');
+            document.getElementById('registrationForm').reset();
+        }
+
+        async function submitRegistration(e) {
+            e.preventDefault();
+
+            const registration = {
+                eventId: document.getElementById('regEventId').value,
+                fullName: document.getElementById('regFullName').value,
+                email: document.getElementById('regEmail').value,
+                alumniId: userData ? userData.name : null
+            };
+
+            try {
+                const response = await fetch('http://localhost:8080/api/events/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registration)
+                });
+
+                const result = await response.text();
+
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: result,
+                        background: 'var(--glass-bg)',
+                        color: 'white',
+                        confirmButtonColor: 'var(--primary-color)'
+                    });
+                    closeRegistrationModal();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: result,
+                        background: 'var(--glass-bg)',
+                        color: 'white',
+                        confirmButtonColor: 'var(--primary-color)'
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Connection failed. Please try again.',
+                    background: 'var(--glass-bg)',
+                    color: 'white'
+                });
+            }
+        }
+
+        loadPublicEvents();
+    </script>
+</body>
+
+</html>
